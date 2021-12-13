@@ -160,3 +160,14 @@ app.post("/unfriend", async (req,res,next)=>{
 	next();
 });
 
+
+
+
+//messages------------------
+app.post("/messagesend", async (req,res,next)=>{
+	await User.findByIdAndUpdate(req.user._id, {messages:[...req.user.messages,{direction:"exiting",body:req.body.message}]})
+	.catch(err=>console.log(err));
+	await User.findByIdAndUpdate(req.body.id, {messages:[...req.user.messages,{direction:"incoming",body:req.body.message}]})
+	.catch(err=>console.log(err));
+	next();
+});
