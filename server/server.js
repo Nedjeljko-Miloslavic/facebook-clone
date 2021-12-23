@@ -28,11 +28,26 @@ initializePassport(passport);
 app.use(passport.initialize());
 app.use(passport.session());
 
+//SOCKET
+const server = require("http").createServer(app);
+const io = require("socket.io")(server,{
+	cors: {
+		origin: "http://localhost:3000",
+		methods: ["GET", "POST"]
+	}
+});
+
+io.on("connection", socket=>{
+	socket.on("message", ()=>{
+		socket.broadcast.emit("message")
+	})
+});
+
 const dbURI = "mongodb://netninja:test1234@cluster0-shard-00-00.814s0.mongodb.net:27017,cluster0-shard-00-01.814s0.mongodb.net:27017,cluster0-shard-00-02.814s0.mongodb.net:27017/facebook?ssl=true&replicaSet=atlas-75h9bd-shard-0&authSource=admin&retryWrites=true&w=majority";
 
 mongoose.connect(dbURI)
 .then(result=>{
-	app.listen(5000);
+	server.listen(5000);
 	console.log("listening");
 })
 .catch(err=>console.log(err));
@@ -42,6 +57,14 @@ app.get("/users", (req,res)=>{
 	.then(users=>{
 		res.json(users);
 	});
+});
+app.get("/user/:id", (req,res,next)=>{
+	User.findById(req.params.id)
+	.then(user=>{
+		res.json(user);
+	})
+	.catch(err=>console.log(err));
+	
 });
 app.delete("/users", (req,res)=>{
 	User.deleteMany()
@@ -144,7 +167,7 @@ app.post("/acceptFriend", async (req,res,next)=>{
 	uniqueFriendFriends = uniqueFriendFriends.filter((value,index,self)=>self.indexOf(value)===index);
 	let friendReqs = req.body.friend.friendRequests.filter(request=>request!==req.user._id.toString());
 	let friendReqRecieved = req.body.friend.friendRequestsRecieved.filter(request=>request!==req.user._id.toString());
-	console.log(friendReqs,friendReqRecieved);
+	
 	await User.findByIdAndUpdate(req.user._id,{friends:uniqueFriends,friendRequests:userRequests,friendRequestsRecieved:userRequestsRecieved})
 	.catch(err=>console.log(err));
 	await User.findByIdAndUpdate(req.body.friend._id,{friends:uniqueFriendFriends,friendRequests:friendReqs,friendRequestsRecieved:friendReqRecieved})
@@ -165,9 +188,14 @@ app.post("/unfriend", async (req,res,next)=>{
 
 //messages------------------
 app.post("/messagesend", async (req,res,next)=>{
-	await User.findByIdAndUpdate(req.user._id, {messages:[...req.user.messages,{direction:"exiting",body:req.body.message}]})
+	await User.findByIdAndUpdate(req.user._id, {messages:[...req.user.messages,{direction:"exiting",body:req.body.message,to:req.body.id,timestamp:Date.now()}]})
 	.catch(err=>console.log(err));
-	await User.findByIdAndUpdate(req.body.id, {messages:[...req.user.messages,{direction:"incoming",body:req.body.message}]})
+	await User.findByIdAndUpdate(req.body.id, {messages:[...req.body.messages,{direction:"incoming",body:req.body.message,from:req.user._id.toString(),timestamp:Date.now()}]})
+	.catch(err=>console.log(err));
+	next();
+});
+app.get("/deletemessage", async (req,res,next)=>{
+	await User.updateMany({messages:[]})
 	.catch(err=>console.log(err));
 	next();
 });
