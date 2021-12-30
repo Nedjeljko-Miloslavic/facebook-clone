@@ -8,9 +8,9 @@ const passport = require("passport");
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
 const initializePassport = require("./passport-config");
-//const FileStore = require('session-file-store')(session);
-
+const multer = require("multer");
 const app = express();
+app.use(express.static("images"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(cors({
@@ -196,6 +196,32 @@ app.post("/messagesend", async (req,res,next)=>{
 });
 app.get("/deletemessage", async (req,res,next)=>{
 	await User.updateMany({messages:[]})
+	.catch(err=>console.log(err));
+	next();
+});
+
+
+// multer ------------------
+const fileStorageEngine = multer.diskStorage({
+	destination: (req,file,cb)=>{
+		cb(null,"./images");
+	},
+	filename: (req,file,cb)=>{
+		cb(null,Date.now()+"--"+file.originalname);
+	}
+});
+const upload = multer({storage:fileStorageEngine});
+
+app.post("/single", upload.single("image"), async (req,res,next)=>{
+	console.log(req.file.path);
+	console.log(req.body.text);
+	await User.findByIdAndUpdate(req.user._id,{photos:[...req.user.photos,{path:req.file.path,text:req.body.text}]})
+	.catch(err=>console.log(err));
+	next();
+});
+app.post("/textPost", async (req,res,next)=>{
+	console.log(req.body);
+	await User.findByIdAndUpdate(req.user._id,{photos:[...req.user.photos,{path:"",text:req.body.text}]})
 	.catch(err=>console.log(err));
 	next();
 });
