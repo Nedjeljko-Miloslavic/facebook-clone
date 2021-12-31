@@ -215,13 +215,13 @@ const upload = multer({storage:fileStorageEngine});
 app.post("/single", upload.single("image"), async (req,res,next)=>{
 	console.log(req.file.path);
 	console.log(req.body.text);
-	await User.findByIdAndUpdate(req.user._id,{photos:[...req.user.photos,{path:req.file.path,text:req.body.text}]})
+	await User.findByIdAndUpdate(req.user._id,{photos:[...req.user.photos,{path:req.file.path,text:req.body.text,timestamp:Date.now()}]})
 	.catch(err=>console.log(err));
 	next();
 });
 app.post("/textPost", async (req,res,next)=>{
 	console.log(req.body);
-	await User.findByIdAndUpdate(req.user._id,{photos:[...req.user.photos,{path:"",text:req.body.text}]})
+	await User.findByIdAndUpdate(req.user._id,{photos:[...req.user.photos,{path:"",text:req.body.text,timestamp:Date.now()}]})
 	.catch(err=>console.log(err));
 	next();
 });
