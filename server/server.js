@@ -225,3 +225,9 @@ app.post("/textPost", async (req,res,next)=>{
 	.catch(err=>console.log(err));
 	next();
 });
+app.post("/profilePicture",upload.single("image"), async(req,res,next)=>{
+	console.log(req.file,req.body);
+	await User.findByIdAndUpdate(req.user._id,{profilePicture:req.file.path})
+	.catch(err=>console.log(err));
+	next();
+});
