@@ -79,7 +79,6 @@ app.post("/usersFind",(req,res)=>{
 	});
 });
 app.post("/user", async (req,res)=>{
-	console.log(req.body);
 	const hashedPassword = await bcrypt.hash(req.body.lozinka,10);
 	const user = new User({
 		ime:req.body.ime,
@@ -110,7 +109,6 @@ app.post("/login",(req,res,next)=>{
 			req.logIn(user, err=>{
 				if(err) throw err;
 				res.json(req.user);
-				//console.log(req.user);
 			});
 			
 		}
@@ -125,7 +123,12 @@ app.get('/logout', (req, res,next)=>{
 
 app.get("/test", (req,res)=>{
 	if(req.user){
-		res.json({authenticated:true,user:req.user});
+		User.findById(req.user._id)
+		.then((result)=>{
+			res.json({authenticated:true,user:result});
+		})
+		.catch(err=>console.log(err));
+		
 	}else{
 		res.json({authenticated:false}); 
 	}
@@ -213,8 +216,6 @@ const fileStorageEngine = multer.diskStorage({
 const upload = multer({storage:fileStorageEngine});
 
 app.post("/single", upload.single("image"), async (req,res,next)=>{
-	console.log(req.file.path);
-	console.log(req.body.text);
 	await User.findByIdAndUpdate(req.user._id,{photos:[...req.user.photos,{path:req.file.path,text:req.body.text,timestamp:Date.now()}]})
 	.catch(err=>console.log(err));
 	next();
