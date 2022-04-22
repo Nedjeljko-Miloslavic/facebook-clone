@@ -8,6 +8,7 @@ const passport = require("passport");
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
 const initializePassport = require("./passport-config");
+const dotenv = require("dotenv").config();
 const multer = require("multer");
 const app = express();
 app.use(express.static("images"));
@@ -43,7 +44,7 @@ io.on("connection", socket=>{
 	})
 });
 
-const dbURI = "mongodb://netninja:test1234@cluster0-shard-00-00.814s0.mongodb.net:27017,cluster0-shard-00-01.814s0.mongodb.net:27017,cluster0-shard-00-02.814s0.mongodb.net:27017/facebook?ssl=true&replicaSet=atlas-75h9bd-shard-0&authSource=admin&retryWrites=true&w=majority";
+const dbURI = process.env.DB_URI;
 
 mongoose.connect(dbURI)
 .then(result=>{
